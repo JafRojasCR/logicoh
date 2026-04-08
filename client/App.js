@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Animated,
 } from 'react-native';
+import { fetchRandomWord } from './src/services/wordService';
 
 /**
  * LogicOh! - Pantalla principal
@@ -16,30 +17,12 @@ import {
  * lógico y vocabulario universitario (UCR/TEC).
  */
 
-// URL del endpoint desplegado en Vercel
-const URL_API = 'https://logicoh.com/api/get-word';
-
-// Paleta de colores oscuros coherente con la estética de la app
-const PALETA_OSCURA = [
-  '#1E1E1E',
-  '#1A3A5F',
-  '#2D3436',
-  '#2C3E50',
-  '#30336B',
-  '#130F40',
-];
-
 export default function App() {
   const [cargando, setCargando] = useState(true);
   const [concepto, setConcepto] = useState(null);
 
   // Valor animado para la transición de opacidad
   const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  // Devuelve un color aleatorio de la paleta oscura
-  const obtenerColorAleatorio = () => {
-    return PALETA_OSCURA[Math.floor(Math.random() * PALETA_OSCURA.length)];
-  };
 
   const obtenerConcepto = useCallback(async () => {
     // Desvanecer antes de cargar el nuevo concepto
@@ -50,32 +33,8 @@ export default function App() {
     }).start(async () => {
       setCargando(true);
       try {
-        const respuesta = await fetch(URL_API);
-        const datos = await respuesta.json();
-
-        if (!datos.style) {
-          datos.style = {
-            backgroundColor: obtenerColorAleatorio(),
-            textColor: '#FFFFFF',
-          };
-        }
-
+        const datos = await fetchRandomWord();
         setConcepto(datos);
-      } catch (error) {
-        console.error('Error al conectar con la API:', error);
-        // Concepto de respaldo cuando no hay conexión
-        setConcepto({
-          term: 'Silogismo',
-          category: 'sustantivo',
-          definition:
-            'Argumento lógico que deriva una conclusión a partir de dos premisas relacionadas entre sí.',
-          example:
-            'Todo ser humano es mortal; Sócrates es un ser humano; por lo tanto, Sócrates es mortal.',
-          style: {
-            backgroundColor: obtenerColorAleatorio(),
-            textColor: '#FFFFFF',
-          },
-        });
       } finally {
         setCargando(false);
         // Aparecer suavemente con el nuevo concepto
@@ -100,7 +59,7 @@ export default function App() {
     );
   }
 
-  const { term, category, definition, example, style } = concepto;
+  const { term, category, definition, example, metadata, tags, style } = concepto;
 
   return (
     <SafeAreaView
@@ -124,6 +83,10 @@ export default function App() {
             {term}
           </Text>
 
+          <Text style={[estilos.meta, { color: style?.textColor || '#D0D0D0' }]}>
+            Dificultad {metadata?.difficulty ?? 3} · Vistas {metadata?.viewCount ?? 0}
+          </Text>
+
           <View style={estilos.divisor} />
 
           <Text style={[estilos.definicion, { color: style?.textColor || '#FFF' }]}>
@@ -134,6 +97,10 @@ export default function App() {
             <Text style={[estilos.ejemplo, { color: style?.textColor || '#AAA' }]}>
               "{example}"
             </Text>
+          ) : null}
+
+          {Array.isArray(tags) && tags.length ? (
+            <Text style={[estilos.tags, { color: style?.textColor || '#AAA' }]}>#{tags.join(' #')}</Text>
           ) : null}
         </View>
 
@@ -192,6 +159,13 @@ const estilos = StyleSheet.create({
     backgroundColor: '#FFF',
     marginVertical: 28,
   },
+  meta: {
+    fontSize: 12,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    opacity: 0.9,
+    fontFamily: 'monospace',
+  },
   definicion: {
     fontSize: 24,
     lineHeight: 34,
@@ -204,6 +178,13 @@ const estilos = StyleSheet.create({
     fontStyle: 'italic',
     lineHeight: 24,
     opacity: 0.6,
+    fontFamily: 'monospace',
+  },
+  tags: {
+    marginTop: 22,
+    fontSize: 12,
+    lineHeight: 18,
+    opacity: 0.7,
     fontFamily: 'monospace',
   },
   pie: {
