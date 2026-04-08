@@ -1,0 +1,15 @@
+{
+  "name": "logicoh-api",
+  "version": "1.0.0",
+  "description": "API serverless de LogicOh! desplegada en Vercel",
+  "main": "index.js",
+  "scripts": {
+    "seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "mongodb": "^6.5.0"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
